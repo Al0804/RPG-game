@@ -34,7 +34,7 @@
             margin-bottom: 20px;
             position: relative;
             height: 250px;
-            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="250" viewBox="0 0 800 250"><rect width="800" height="250" fill="%23263238"/><path d="M0,200 Q200,150 400,200 T800,200 L800,250 L0,250 Z" fill="%23546E7A"/></svg>') no-repeat;
+            background: url('Images/Street\ Fighter\ Alpha\ 2\,\ Venezuela\ secret\ stage_.gif') no-repeat;
             background-size: cover;
             border-radius: 8px;
         }
@@ -46,23 +46,26 @@
             background-repeat: no-repeat;
             background-position: center bottom;
             position: absolute;
-            bottom: 50px;
+            bottom: 0; /* Changed from 50px to 0 */
             transition: transform 0.3s, filter 0.3s;
         }
 
-        #zerina {
-            left: 100px;
-            background-image: url('Images/Z0.png');
+       #zerina {
+        left: 100px;
+        background-image: url('Images/Z0.png');
+        transform: translateY(-10px); /* Added to fine-tune vertical position */
         }
 
-        #dragon {
-            right: 100px;
-            background-image: url('Images/dragon.png');
+    #dragon {
+        right: 100px;
+        background-image: url('Images/dragon.png');
+        transform: translateY(-10px); /* Added to fine-tune vertical position */
         }
 
         .stats-container {
             display: flex;
             justify-content: space-between;
+            gap: 10px;
             margin-bottom: 15px;
         }
 
