@@ -257,6 +257,104 @@
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
         }
 
+        .attack-effect {
+            position: absolute;
+            pointer-events: none;
+            z-index: 2;
+        }
+        
+        /* Dragon's fire breath effect */
+        .dragon-fire {
+            width: 200px;
+            height: 50px;
+            background: linear-gradient(90deg, #ff4500, #ff8c00, transparent);
+            position: absolute;
+            right: 120px;
+            bottom: 60px;
+            transform-origin: right center;
+            animation: fireBreath 1s ease-out;
+            border-radius: 10px;
+            filter: blur(5px);
+        }
+        
+        @keyframes fireBreath {
+            0% {
+                width: 0;
+                opacity: 0;
+            }
+            20% {
+                width: 200px;
+                opacity: 1;
+            }
+            100% {
+                width: 200px;
+                opacity: 0;
+            }
+        }
+        
+        /* Zerina's elemental effects */
+        .element-fire {
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #ff4500, #ff8c00);
+            border-radius: 50%;
+            filter: blur(2px);
+            animation: elementShot 0.5s linear;
+        }
+        
+        .element-water {
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #00bfff, #0000cd);
+            border-radius: 40% 60% 60% 40%;
+            filter: blur(2px);
+            animation: elementShot 0.5s linear;
+        }
+        
+        .element-wind {
+            width: 60px;
+            height: 30px;
+            background: linear-gradient(90deg, #87ceeb, transparent);
+            border-radius: 50%;
+            filter: blur(3px);
+            animation: elementShot 0.5s linear;
+        }
+        
+        .element-earth {
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #8b4513, #556b2f);
+            border-radius: 10%;
+            filter: blur(1px);
+            animation: elementShot 0.5s linear;
+        }
+        
+        .element-combo {
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle, #9932cc, #4b0082);
+            border-radius: 50%;
+            box-shadow: 0 0 20px #9932cc;
+            filter: blur(2px);
+            animation: elementShot 0.5s linear;
+        }
+        
+        @keyframes elementShot {
+            0% {
+                transform: translateX(100px) scale(0.5);
+                opacity: 0;
+            }
+            50% {
+                transform: translateX(200px) scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(300px) scale(1);
+                opacity: 0;
+            }
+        }
+        
+
         /* Mobile responsiveness */
         @media (max-width: 600px) {
             .game-container {
@@ -487,37 +585,42 @@
             
             const attackInfo = attacks[attackType];
             
-            // Check if player has enough MP
             if (gameState.playerMP < attackInfo.mpCost) {
                 addLogEntry("Tidak cukup MP untuk serangan ini!", "system");
                 return;
             }
             
-            // Reduce MP
             gameState.playerMP -= attackInfo.mpCost;
             
-            // Calculate damage (with some randomization)
             const baseDamage = attackInfo.damage;
-            const damageVariation = Math.floor(baseDamage * 0.2); // 20% variation
+            const damageVariation = Math.floor(baseDamage * 0.2);
             const finalDamage = baseDamage + Math.floor(Math.random() * damageVariation * 2) - damageVariation;
             
-            // Apply damage to enemy
-            gameState.enemyHP -= finalDamage;
+            // Create and animate elemental effect
+            const elementEffect = document.createElement('div');
+            elementEffect.className = `attack-effect element-${attackType}`;
+            elementEffect.style.left = '150px';
+            elementEffect.style.bottom = '60px';
             
-            // Animate the attack
+            document.querySelector('.battle-area').appendChild(elementEffect);
+            
+            // Remove effect after animation
+            setTimeout(() => {
+                elementEffect.remove();
+            }, 500);
+            
             animateAttack('player');
             setTimeout(() => {
                 animateHit('enemy');
                 showDamageText('enemy', finalDamage);
             }, 250);
             
-            // Update log
+            gameState.enemyHP -= finalDamage;
+            
             addLogEntry(`Zerina menggunakan ${attackInfo.name} - ${attackInfo.description}! Damage: ${finalDamage}`, "player");
             
-            // Update stats
             updateStats();
             
-            // Check if enemy is defeated
             if (gameState.enemyHP <= 0) {
                 gameState.enemyHP = 0;
                 gameState.gameOver = true;
@@ -529,35 +632,38 @@
                 return;
             }
             
-            // Switch turns
             gameState.isPlayerTurn = false;
             setTimeout(enemyTurn, 1500);
         }
         
-        // Function for enemy's turn
+        // Modify enemyTurn to include dragon's fire breath effect
         function enemyTurn() {
             if (gameState.gameOver) return;
             
-            // Dragon only uses fire attacks
-            const dragonDamage = 12 + Math.floor(Math.random() * 8); // 12-19 damage
+            const dragonDamage = 12 + Math.floor(Math.random() * 8);
             
-            // Animate the attack
+            // Create and animate dragon's fire breath
+            const fireBreath = document.createElement('div');
+            fireBreath.className = 'attack-effect dragon-fire';
+            document.querySelector('.battle-area').appendChild(fireBreath);
+            
+            // Remove fire breath effect after animation
+            setTimeout(() => {
+                fireBreath.remove();
+            }, 1000);
+            
             animateAttack('enemy');
             setTimeout(() => {
                 animateHit('player');
                 showDamageText('player', dragonDamage);
             }, 250);
             
-            // Apply damage to player
             gameState.playerHP -= dragonDamage;
             
-            // Update log
             addLogEntry(`Dragon menyerang dengan napas api! Damage: ${dragonDamage}`, "enemy");
             
-            // Update stats
             updateStats();
             
-            // Check if player is defeated
             if (gameState.playerHP <= 0) {
                 gameState.playerHP = 0;
                 gameState.gameOver = true;
@@ -566,15 +672,14 @@
                 return;
             }
             
-            // Recover some MP each turn
             const mpRecovery = 10;
             gameState.playerMP = Math.min(gameState.playerMaxMP, gameState.playerMP + mpRecovery);
             addLogEntry(`Zerina memulihkan ${mpRecovery} MP.`, "system");
             updateStats();
             
-            // Switch turns back to player
             gameState.isPlayerTurn = true;
         }
+        
         
         // Event listener for the special message button
         messageBtn.addEventListener('click', function() {
