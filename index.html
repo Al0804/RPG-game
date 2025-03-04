@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zerina vs Dragon - RPG Battle</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #1a2a3a, #0a0a1a);
+            color: white;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 0 20px rgba(0, 0, 255, 0.5);
+        }
+
+        .battle-area {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            position: relative;
+            height: 250px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="250" viewBox="0 0 800 250"><rect width="800" height="250" fill="%23263238"/><path d="M0,200 Q200,150 400,200 T800,200 L800,250 L0,250 Z" fill="%23546E7A"/></svg>') no-repeat;
+            background-size: cover;
+            border-radius: 8px;
+        }
+
+        .character {
+            width: 120px;
+            height: 120px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center bottom;
+            position: absolute;
+            bottom: 50px;
+            transition: transform 0.3s, filter 0.3s;
+        }
+
+        #zerina {
+            left: 100px;
+            background-image: url('Images/Z0.png');
+        }
+
+        #dragon {
+            right: 100px;
+            background-image: url('Images/dragon.png');
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .stat-box {
+            width: 48%;
+            background-color: rgba(50, 50, 80, 0.7);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .health-bar {
+            height: 20px;
+            background-color: #444;
+            border-radius: 10px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(to right, #ff0000, #ff5500);
+            width: 100%;
+            transition: width 0.5s;
+        }
+
+        .mana-bar {
+            height: 15px;
+            background-color: #444;
+            border-radius: 10px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .mana-fill {
+            height: 100%;
+            background: linear-gradient(to right, #0077ff, #00ccff);
+            width: 100%;
+            transition: width 0.5s;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .element-btn {
+            flex-grow: 1;
+            min-width: 120px;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .element-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .fire { background: linear-gradient(to bottom, #ff4500, #8b0000); }
+        .water { background: linear-gradient(to bottom, #00bfff, #0000cd); }
+        .wind { background: linear-gradient(to bottom, #87ceeb, #4682b4); }
+        .earth { background: linear-gradient(to bottom, #8b4513, #556b2f); }
+        .combo { background: linear-gradient(to bottom, #9932cc, #4b0082); }
+
+        .battle-log {
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 8px;
+            padding: 10px;
+            height: 150px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            color: #ddd;
+            font-family: 'Courier New', monospace;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding-left: 5px;
+            border-left: 3px solid;
+        }
+
+        .log-player { border-color: #4caf50; }
+        .log-enemy { border-color: #f44336; }
+        .log-system { border-color: #ffeb3b; }
+
+        .damage-text {
+            position: absolute;
+            color: red;
+            font-weight: bold;
+            font-size: 24px;
+            animation: damageFloat 1s forwards;
+            text-shadow: 2px 2px 0 black;
+        }
+
+        @keyframes damageFloat {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+
+        .hit-effect {
+            filter: brightness(1.5) contrast(1.2) hue-rotate(90deg);
+        }
+
+        .attack-animation {
+            animation: attackMove 0.5s forwards;
+        }
+
+        @keyframes attackMove {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(50px); }
+            100% { transform: translateX(0); }
+        }
+
+        @keyframes attackMoveEnemy {
+            0% { transform: scaleX(-1) translateX(0); }
+            50% { transform: scaleX(-1) translateX(50px); }
+            100% { transform: scaleX(-1) translateX(0); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(to bottom, #2c3e50, #1a1a2e);
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 80%;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(100, 100, 255, 0.5);
+            animation: modalAppear 0.5s forwards;
+        }
+
+        @keyframes modalAppear {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .victory-title {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: gold;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .modal-btn {
+            background: linear-gradient(to bottom, #9932cc, #4b0082);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 16px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .modal-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(155, 50, 255, 0.7);
+        }
+
+        .special-message {
+            display: none;
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-style: italic;
+            line-height: 1.6;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 600px) {
+            .game-container {
+                padding: 10px;
+                margin: 10px;
+            }
+            
+            .battle-area {
+                height: 200px;
+            }
+            
+            .character {
+                width: 80px;
+                height: 80px;
+            }
+            
+            #zerina {
+                left: 50px;
+            }
+            
+            #dragon {
+                right: 50px;
+            }
+            
+            .element-btn {
+                min-width: 80px;
+                padding: 8px;
+                font-size: 12px;
+            }
+            
+            .battle-log {
+                height: 120px;
+            }
+            
+            .modal-content {
+                padding: 15px;
+            }
+            
+            .victory-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 style="text-align: center; color: #ffcc00; text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);">Zerina vs Dragon</h1>
+        
+        <div class="battle-area">
+            <div id="zerina" class="character"></div>
+            <div id="dragon" class="character"></div>
+        </div>
+        
+        <div class="stats-container">
+            <div class="stat-box">
+                <h3>Zerina (INTP)</h3>
+                <div>HP: <span id="player-hp">100</span>/100</div>
+                <div class="health-bar"><div id="player-hp-bar" class="health-fill"></div></div>
+                <div>MP: <span id="player-mp">100</span>/100</div>
+                <div class="mana-bar"><div id="player-mp-bar" class="mana-fill"></div></div>
+            </div>
+            
+            <div class="stat-box">
+                <h3>Dragon</h3>
+                <div>HP: <span id="enemy-hp">150</span>/150</div>
+                <div class="health-bar"><div id="enemy-hp-bar" class="health-fill"></div></div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <button class="element-btn fire" onclick="attack('fire')">Api 🔥<br>(10 MP)</button>
+            <button class="element-btn water" onclick="attack('water')">Air 💧<br>(10 MP)</button>
+            <button class="element-btn wind" onclick="attack('wind')">Angin 🌪️<br>(10 MP)</button>
+            <button class="element-btn earth" onclick="attack('earth')">Tanah 🌱<br>(10 MP)</button>
+            <button class="element-btn combo" onclick="attack('combo')">Kombinasi Elemen ✨<br>(30 MP)</button>
+        </div>
+        
+        <div class="battle-log" id="battle-log">
+            <div class="log-entry log-system">Pertarungan dimulai! Zerina berhadapan dengan Dragon.</div>
+            <div class="log-entry log-system">Zerina memiliki keunggulan karena dapat menggunakan semua elemen!</div>
+        </div>
+    </div>
+    
+    <div class="modal" id="victory-modal">
+        <div class="modal-content">
+            <h2 class="victory-title">Kemenangan!</h2>
+            <p>Zerina berhasil mengalahkan naga dengan kekuatan INTP-nya!</p>
+            <button class="modal-btn" id="message-btn">Klik Tombol ini untuk melihat pesan</button>
+            <div class="special-message" id="special-message">
+                Untuk kamu yang sudah menyelesaikan permainan ini, selamat ya. Semoga kamu bisa terus berjuang dan bisa menang melawan rintangan hidup yang ada seperti karakter yang kamu mainkan. Seperti layaknya guide di dalam game ini, aku akan terus bersamamu dan memandumu apapun itu kondisinya. Terima kasih ya Lia, dan sekali lagi aku mencintaimu.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        const gameState = {
+            playerHP: 100,
+            playerMaxHP: 100,
+            playerMP: 100,
+            playerMaxMP: 100,
+            enemyHP: 150,
+            enemyMaxHP: 150,
+            isPlayerTurn: true,
+            gameOver: false
+        };
+        
+        // DOM elements
+        const playerHPText = document.getElementById('player-hp');
+        const playerHPBar = document.getElementById('player-hp-bar');
+        const playerMPText = document.getElementById('player-mp');
+        const playerMPBar = document.getElementById('player-mp-bar');
+        const enemyHPText = document.getElementById('enemy-hp');
+        const enemyHPBar = document.getElementById('enemy-hp-bar');
+        const battleLog = document.getElementById('battle-log');
+        const zerinaChar = document.getElementById('zerina');
+        const dragonChar = document.getElementById('dragon');
+        const victoryModal = document.getElementById('victory-modal');
+        const messageBtn = document.getElementById('message-btn');
+        const specialMessage = document.getElementById('special-message');
+        
+        // Attack configurations
+        const attacks = {
+            fire: {
+                name: "Api",
+                damage: 15,
+                mpCost: 10,
+                description: "serangan api yang membakar"
+            },
+            water: {
+                name: "Air",
+                damage: 12,
+                mpCost: 10,
+                description: "serangan air yang menyapu"
+            },
+            wind: {
+                name: "Angin",
+                damage: 10,
+                mpCost: 10,
+                description: "serangan angin yang tajam"
+            },
+            earth: {
+                name: "Tanah",
+                damage: 18,
+                mpCost: 10,
+                description: "serangan tanah yang menghancurkan"
+            },
+            combo: {
+                name: "Kombinasi Elemen",
+                damage: 30,
+                mpCost: 30,
+                description: "serangan dahsyat gabungan semua elemen"
+            }
+        };
+        
+        // Function to update HP and MP bars
+        function updateStats() {
+            playerHPText.textContent = Math.max(0, gameState.playerHP);
+            playerHPBar.style.width = `${(gameState.playerHP / gameState.playerMaxHP) * 100}%`;
+            
+            playerMPText.textContent = gameState.playerMP;
+            playerMPBar.style.width = `${(gameState.playerMP / gameState.playerMaxMP) * 100}%`;
+            
+            enemyHPText.textContent = Math.max(0, gameState.enemyHP);
+            enemyHPBar.style.width = `${(gameState.enemyHP / gameState.enemyMaxHP) * 100}%`;
+        }
+        
+        // Function to add log entries
+        function addLogEntry(text, type) {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = text;
+            battleLog.appendChild(entry);
+            battleLog.scrollTop = battleLog.scrollHeight;
+        }
+        
+        // Function to show damage text
+        function showDamageText(target, amount) {
+            const damageText = document.createElement('div');
+            damageText.className = 'damage-text';
+            damageText.textContent = `-${amount}`;
+            
+            // Position the damage text
+            const character = target === 'player' ? zerinaChar : dragonChar;
+            const characterRect = character.getBoundingClientRect();
+            const battleArea = document.querySelector('.battle-area');
+            const battleRect = battleArea.getBoundingClientRect();
+            
+            damageText.style.left = `${characterRect.left + characterRect.width/2 - battleRect.left - 20}px`;
+            damageText.style.top = `${characterRect.top - battleRect.top}px`;
+            
+            battleArea.appendChild(damageText);
+            
+            // Remove after animation completes
+            setTimeout(() => {
+                damageText.remove();
+            }, 1000);
+        }
+        
+        // Function to animate attack
+        function animateAttack(attacker) {
+            if (attacker === 'player') {
+                zerinaChar.classList.add('attack-animation');
+                setTimeout(() => {
+                    zerinaChar.classList.remove('attack-animation');
+                }, 500);
+            } else {
+                // Animate dragon moving to the left (towards Zerina)
+                dragonChar.style.transform = ' translateX(-50px)';
+                setTimeout(() => {
+                    dragonChar.style.transform = '';
+                }, 500);
+            }
+        }
+        
+        // Function to animate hit
+        function animateHit(target) {
+            const character = target === 'player' ? zerinaChar : dragonChar;
+            character.classList.add('hit-effect');
+            setTimeout(() => {
+                character.classList.remove('hit-effect');
+            }, 300);
+        }
+        
+        // Function for player to attack
+        function attack(attackType) {
+            if (!gameState.isPlayerTurn || gameState.gameOver) return;
+            
+            const attackInfo = attacks[attackType];
+            
+            // Check if player has enough MP
+            if (gameState.playerMP < attackInfo.mpCost) {
+                addLogEntry("Tidak cukup MP untuk serangan ini!", "system");
+                return;
+            }
+            
+            // Reduce MP
+            gameState.playerMP -= attackInfo.mpCost;
+            
+            // Calculate damage (with some randomization)
+            const baseDamage = attackInfo.damage;
+            const damageVariation = Math.floor(baseDamage * 0.2); // 20% variation
+            const finalDamage = baseDamage + Math.floor(Math.random() * damageVariation * 2) - damageVariation;
+            
+            // Apply damage to enemy
+            gameState.enemyHP -= finalDamage;
+            
+            // Animate the attack
+            animateAttack('player');
+            setTimeout(() => {
+                animateHit('enemy');
+                showDamageText('enemy', finalDamage);
+            }, 250);
+            
+            // Update log
+            addLogEntry(`Zerina menggunakan ${attackInfo.name} - ${attackInfo.description}! Damage: ${finalDamage}`, "player");
+            
+            // Update stats
+            updateStats();
+            
+            // Check if enemy is defeated
+            if (gameState.enemyHP <= 0) {
+                gameState.enemyHP = 0;
+                gameState.gameOver = true;
+                updateStats();
+                addLogEntry("Dragon dikalahkan! Zerina menang!", "system");
+                setTimeout(() => {
+                    victoryModal.style.display = "flex";
+                }, 1000);
+                return;
+            }
+            
+            // Switch turns
+            gameState.isPlayerTurn = false;
+            setTimeout(enemyTurn, 1500);
+        }
+        
+        // Function for enemy's turn
+        function enemyTurn() {
+            if (gameState.gameOver) return;
+            
+            // Dragon only uses fire attacks
+            const dragonDamage = 12 + Math.floor(Math.random() * 8); // 12-19 damage
+            
+            // Animate the attack
+            animateAttack('enemy');
+            setTimeout(() => {
+                animateHit('player');
+                showDamageText('player', dragonDamage);
+            }, 250);
+            
+            // Apply damage to player
+            gameState.playerHP -= dragonDamage;
+            
+            // Update log
+            addLogEntry(`Dragon menyerang dengan napas api! Damage: ${dragonDamage}`, "enemy");
+            
+            // Update stats
+            updateStats();
+            
+            // Check if player is defeated
+            if (gameState.playerHP <= 0) {
+                gameState.playerHP = 0;
+                gameState.gameOver = true;
+                updateStats();
+                addLogEntry("Zerina dikalahkan! Dragon menang!", "system");
+                return;
+            }
+            
+            // Recover some MP each turn
+            const mpRecovery = 10;
+            gameState.playerMP = Math.min(gameState.playerMaxMP, gameState.playerMP + mpRecovery);
+            addLogEntry(`Zerina memulihkan ${mpRecovery} MP.`, "system");
+            updateStats();
+            
+            // Switch turns back to player
+            gameState.isPlayerTurn = true;
+        }
+        
+        // Event listener for the special message button
+        messageBtn.addEventListener('click', function() {
+            specialMessage.style.display = "block";
+            messageBtn.style.display = "none";
+        });
+        
+        // Initialize the game
+        updateStats();
+    </script>
+</body>
+</html>
